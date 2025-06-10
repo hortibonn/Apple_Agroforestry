@@ -84,7 +84,7 @@ library(ggh4x)
 
 
 # source("functions/saveLoad-module.R")
-source("functions/DA_for_exploring_funding_effects_data_visualisation.R")
+#source("functions/DA_for_exploring_funding_effects_data_visualisation.R")
 source("functions/DA_for_exploring_funding_effects_decision_model.R")
 source("functions/dynamic-helper.R")
 source("functions/funding_server.R")
@@ -242,14 +242,24 @@ ui <- fluidPage(
               In the tab 'Expertise categories' you can select the categories for which you want to modify the default values. This is useful if you do not feel confident enough to provide estimates for all the variables of the model.\n
               When clicking 'Run the model', the app will perform multiple runs of the model, each with a unique combination of values of the input variables, always within the range defined by the bars of the left-hand side tabs.\n
               After the model is computed, the results will be displayed here below\n
-              In the tab 'Funding schemes' you can select the funding scheme of your region of interest. If you do not find the funding schemes of your regions of interest, please contact us to include it (mjimene1@uni-bonn.de)"
+              In the tab 'Funding schemes' you can select the funding scheme of your region of interest. If you do not find the funding schemes of your regions of interest, please contact us to include it (pkasargo@uni-bonn.de)"
               ),
-              tags$a(
-                "Click here for latest info on Sustainable Farming Incentive",
-                href = "https://www.gov.uk/government/publications/sustainable-farming-incentive-scheme-expanded-offer-for-2024",
-                target="_blank",
-                class = "my-btn"
-              ),
+              # tags$a(
+              #   "Click here for latest info on Sustainable Farming Incentive",
+              #   href = "https://www.gov.uk/government/publications/sustainable-farming-incentive-scheme-expanded-offer-for-2024",
+              #   target="_blank",
+              #   class = "my-btn"
+              # ),
+              br(), br(),
+              
+              #titlePanel("Selected Financial Supports"),
+              #create_funding_ui("funding"),        # UI part from the module
+              #uiOutput("financial_support_links"),
+              tags$h4("Selected Financial Supports"),
+              tableOutput("summary"),
+              #verbatimTextOutput("summary"), 
+              # uiOutput("funding-financial-support"),
+              
               br(), br(),
               plotOutput("plot1_ui", height = "550px"),
               br(),
@@ -303,6 +313,24 @@ server <- function(input, output, session) {
   ## Dynamic funding module ----
   funding <- funding_server("funding")   # returns a list of reactives
   
+  output$`funding-financial-support` <- renderUI({
+    funding$financial_support_links
+  })
+  # output$summary <- renderPrint({
+  #   result$category_totals()          
+  output$summary <- renderTable({
+    
+    # Get the full funding totals (gov + private) as a named list
+    total_funding <- funding$total_funding_with_private()
+    
+    # Debug: data frame for table output ### remove for the final or can be displayed in the mainPanel too - upto @Adrain
+    data.frame(
+      `Funding Category` = str_to_title(str_replace_all(str_remove(names(total_funding), "_c$"), "_", " ")),
+      `Total Financial Support` = round(unname(total_funding), 2),
+      check.names = FALSE,
+      row.names = NULL
+    )
+  })
   ## Helper for safe extraction from named vector
   safe_get <- function(vec, name) {
     if (is.null(vec) || length(vec) == 0 || is.na(vec[name])) return(0)
@@ -310,52 +338,53 @@ server <- function(input, output, session) {
     as.numeric(vec[name])
   }
   
+  
   ## Wrapper -> *exact* variables the walnut model expects
-  funding_variables <- reactive({
-    sel <- funding$category_totals()        # named vector per category (gov)
-    
-    ## private inputs
-    onetime_private <- funding$onetime_private_input()
-    annual_private  <- funding$annual_private_input()
-    
-    # area / trees already entered elsewhere in UI
-    AF1_area  <- max(0, as.numeric(input$arable_area_c) - as.numeric(input$AF1_tree_row_area_c))
-    AF2_area  <- max(0, as.numeric(input$arable_area_c) - as.numeric(input$AF2_tree_row_area_c))
-    AF1_trees <- as.numeric(input$AF1_num_trees_c)
-    AF2_trees <- sum(as.numeric(input$num_oak_trees_c), as.numeric(input$num_birch_trees_c),
-                     as.numeric(input$num_rowan_trees_c), as.numeric(input$num_hazel_trees_c),
-                     as.numeric(input$num_damson_trees_c), as.numeric(input$num_bcherry_trees_c))
-    
-    # funding amounts per category
-    per_ha      <- safe_get(sel, "funding_onetime_per_ha_schemes_c")
-    per_tree    <- safe_get(sel, "funding_onetime_per_tree_schemes_c")
-    annual_ha   <- safe_get(sel, "annual_funding_schemes_c")
-    perc_incost <- safe_get(sel, "funding_onetime_percentage_incost_schemes_c")
-    perc_cons   <- safe_get(sel, "funding_onetime_percentage_consult_schemes_c")
-    
-    # Compute totals
-    AF1_one_time   <- per_ha   * AF1_area  + per_tree * AF1_trees + onetime_private
-    AF2_one_time   <- per_ha   * AF2_area  + per_tree * AF2_trees + onetime_private
-    AF1_annual     <- annual_ha * AF1_area + annual_private * AF1_area
-    AF2_annual     <- annual_ha * AF2_area + annual_private * AF2_area
-    
-    AF1_perc <- perc_incost   # tie whichever category decided for AF1
-    AF2_perc <- perc_cons     # … and AF2
-    any_perc <- as.numeric((AF1_perc + AF2_perc) > 0)
-    
-    data.frame(
-      variable = c("AF1_total_annual_funding_c", "AF2_total_annual_funding_c",
-                   "AF1_total_one_time_funding_c", "AF2_total_one_time_funding_c",
-                   "AF2_percentage_values_c", "AF1_percentage_values_c",
-                   "selected_percentage_c"),
-      lower = c(AF1_annual, AF2_annual, AF1_one_time, AF2_one_time,
-                AF2_perc, AF1_perc, any_perc),
-      upper = c(AF1_annual, AF2_annual, AF1_one_time, AF2_one_time,
-                AF2_perc, AF1_perc, any_perc),
-      distribution = "const",
-      stringsAsFactors = FALSE
-    )
-  })
+  # funding_variables <- reactive({
+  #   sel <- funding$category_totals()        # named vector per category (gov)
+  #   
+  #   ## private inputs
+  #   onetime_private <- funding$onetime_private_input()
+  #   annual_private  <- funding$annual_private_input()
+  #   
+  #   # area / trees already entered elsewhere in UI
+  #   AF1_area  <- max(0, as.numeric(input$arable_area_c) - as.numeric(input$AF1_tree_row_area_c))
+  #   AF2_area  <- max(0, as.numeric(input$arable_area_c) - as.numeric(input$AF2_tree_row_area_c))
+  #   AF1_trees <- as.numeric(input$AF1_num_trees_c)
+  #   AF2_trees <- sum(as.numeric(input$num_oak_trees_c), as.numeric(input$num_birch_trees_c),
+  #                    as.numeric(input$num_rowan_trees_c), as.numeric(input$num_hazel_trees_c),
+  #                    as.numeric(input$num_damson_trees_c), as.numeric(input$num_bcherry_trees_c))
+  #   
+  #   # funding amounts per category
+  #   per_ha      <- safe_get(sel, "funding_onetime_per_ha_schemes_c")
+  #   per_tree    <- safe_get(sel, "funding_onetime_per_tree_schemes_c")
+  #   annual_ha   <- safe_get(sel, "annual_funding_schemes_c")
+  #   perc_incost <- safe_get(sel, "funding_onetime_percentage_initial_cost_schemes_c")
+  #   perc_cons   <- safe_get(sel, "funding_onetime_percentage_consult_schemes_c")
+  #   
+  #   # Compute totals
+  #   AF1_one_time   <- per_ha   * AF1_area  + per_tree * AF1_trees + onetime_private
+  #   AF2_one_time   <- per_ha   * AF2_area  + per_tree * AF2_trees + onetime_private
+  #   AF1_annual     <- annual_ha * AF1_area + annual_private * AF1_area
+  #   AF2_annual     <- annual_ha * AF2_area + annual_private * AF2_area
+  #   
+  #   AF1_perc <- perc_incost   # tie whichever category decided for AF1
+  #   AF2_perc <- perc_cons     # … and AF2
+  #   any_perc <- as.numeric((AF1_perc + AF2_perc) > 0)
+  #   
+  #   data.frame(
+  #     variable = c("AF1_total_annual_funding_c", "AF2_total_annual_funding_c",
+  #                  "AF1_total_one_time_funding_c", "AF2_total_one_time_funding_c",
+  #                  "AF2_percentage_values_c", "AF1_percentage_values_c",
+  #                  "selected_percentage_c"),
+  #     lower = c(AF1_annual, AF2_annual, AF1_one_time, AF2_one_time,
+  #               AF2_perc, AF1_perc, any_perc),
+  #     upper = c(AF1_annual, AF2_annual, AF1_one_time, AF2_one_time,
+  #               AF2_perc, AF1_perc, any_perc),
+  #     distribution = "const",
+  #     stringsAsFactors = FALSE
+  #   )
+  # })
   
   
   ## Dynamic expertise-filter module ----
@@ -557,7 +586,7 @@ server <- function(input, output, session) {
     #   names(input)[grepl("(_c$|_p$|_t$|_n$|_cond$)", names(input))],
     #   exclude_inputs
     # )
-    
+
     lower_values <- sapply(variables, function(v) {
       val <- input[[v]]
       if (length(val) == 1) as.numeric(val) else as.numeric(val[1])
@@ -587,14 +616,37 @@ server <- function(input, output, session) {
       select(-ends_with(".new"))
     
     # 3. Append funding scalars
-    fund_df <- funding_variables()
-    fund_df$lower[is.na(fund_df$lower)] <- 0
-    fund_df$upper[is.na(fund_df$upper)] <- 0
+    # View(input_file)
     
-    input_file <- bind_rows(
-      input_file %>% filter(!variable %in% fund_df$variable),
-      fund_df
-    )
+    total_funding <- funding$total_funding_with_private()
+    
+    input_file <- 
+      data.frame(variable = names(total_funding),
+                 lower = unname(total_funding),
+                 upper = unname(total_funding),
+                 distribution = "const") %>% 
+      bind_rows(input_file, .)
+    
+    # View(input_file)
+    
+    funding_names <- 
+      c("funding_onetime_percentage_initial_cost_schemes_c", "annual_funding_schemes_c",
+        "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c",
+        "funding_onetime_per_m_treerow_schemes_c", "annual_funding_per_m_schemes_c",
+        "annual_funding_per_tree_schemes_c", "funding_onetime_schemes_c",
+        "onetime_external_percentage_incost_schemes_c","onetime_external_percentage_consult_schemes_c",
+        "funding_onetime_per_ha_schemes_c", "onetime_external_support_c", "annual_external_support_c")
+    funding_df <- data.frame(variable = funding_names,
+                             lower = 0,
+                             upper = 0,
+                             distribution = "const")
+    
+    remain <- funding_names[!(funding_names %in% input_file$variable)]
+    input_file <- funding_df %>% 
+      filter(variable %in% remain) %>% 
+      bind_rows(input_file, .)
+    
+    # View(input_file)
     
     # # 4. Save UI snapshot (optional)
     # saveRDS(list(sheet_names, input_file), "data/Walnut_grain_veg_tub_ui_updated.RDS")
@@ -809,7 +861,7 @@ server <- function(input, output, session) {
     plot1 <-
       decisionSupport::plot_distributions(mcSimulation_object = mc_data,
                                           vars = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
-                                          method = "smooth_simple_overlay",
+                                          method = "boxplot",
                                           old_names = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
                                           new_names = c("Monoculture", "Agroforestry without funding", "Agroforestry with current funding", "Agroforestry with DeFAF fund"),
                                           x_axis_name = "NPV (€)",
@@ -940,9 +992,9 @@ server <- function(input, output, session) {
     # make_download("download_plot7", plot7, "Figure7_Incremental_Cumulative_CF.png")
     # output$plot7_dl_ui <- renderUI({
     #   downloadButton("download_plot7", "Download Figure 7")
-    })
+    # })
     
-
+    
     # Ask user whether to run EVPI (takes time!)
     showModal(modalDialog(
       title = "Run EVPI analysis?",
@@ -987,7 +1039,7 @@ server <- function(input, output, session) {
         plot8 <- plot8 |>
           add_meta(title = "Figure 8. EVPI for Each Variable",
                    subtitle = "Maximum amount worth paying for perfect information on each variable."
-                   )
+          )
         
         output$plot8_ui <- renderPlot({ plot8 })
         
@@ -1006,8 +1058,8 @@ server <- function(input, output, session) {
       })
     })
     
-#   })
-#   
+  })
+  
 }
 
 shinyApp(ui = ui, server = server)
