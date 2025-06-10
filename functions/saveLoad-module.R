@@ -1,7 +1,7 @@
 file_dir <- if (Sys.info()[["sysname"]] == "Windows") {
-  "user-states/Belgium"
+  "user-states/Germany"
 } else {
-  "/srv/shiny-app-data/user-states/Belgium"
+  "/srv/shiny-app-data/user-states/Germany"
 }
 
 # Save / Load UI ----
