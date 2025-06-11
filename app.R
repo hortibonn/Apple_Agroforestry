@@ -82,13 +82,13 @@ if (!requireNamespace("ggh4x", quietly = TRUE)) {
 }
 library(ggh4x)
 
-
+# Provide Location of DA model script, dynamic-helper and funding-server scripts
 # source("functions/saveLoad-module.R")
 #source("functions/DA_for_exploring_funding_effects_data_visualisation.R")
 source("functions/DA_for_exploring_funding_effects_decision_model.R")
 source("functions/dynamic-helper.R")
 source("functions/funding_server.R")
-
+# Provide Location of excel workbook conatining the input parameters (prepared for the dynamic-helper)
 file_path_vars <- "data/Apple_AF_Steinfurt_wRisk_30.xlsx"
 sheet_meta <- readxl::read_excel(file_path_vars, sheet = "sheet_names",
                                  col_types = c("text", "text"))
@@ -116,11 +116,11 @@ ui <- fluidPage(
       tags$img(src = "UniBonnHortiBonn_logo_transparent.png", height = "100px",
                style = "margin-left: auto; max-width: 20%; height: auto; cursor: pointer;"),
       # ),
-      
-      tags$h2(tags$div("Decision Analysis:"),
-              tags$div("conversion of cropland into apple alley-cropping"),
+      # Provide Title of the DA model
+      tags$h2(tags$div("Decision:"),
+              tags$div("convert cropland into apple alley-cropping system"),
               style = "text-align: center; flex-grow: 1;"),
-      
+      # Provide Project Logo
       # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
       tags$img(src = "ReFOREST_logo_horizontal_transparent.png", height = "100px",
                style = "margin-right: auto; max-width: 30%; height: auto; cursor: pointer;")
@@ -175,13 +175,7 @@ ui <- fluidPage(
                          "Expertise categories",
                          tags$span(
                            icon("circle-question"),
-                           title = "Select your main expertise to modify only the variables suited to such expertise. Ultimately, we are all experts to a higher or lower degree in all categories. You too :) 
-                           
-                           But we recommend that the first time you use this interface you select only one or two categories in order to get familiar with it. The simulations will still run with the default values for those expertise categories that you do not select.
-                           
-                           If you do not check any box, you will see all the variables of the model (i.e.: all expertise categories).
-                           
-                           If you are the decision maker, e.g.: you are a farmer thinking about implementing agroforestry in treeles land, please check the Decision Maker box to set basic variables that serve to quantify your interests and motivations",
+                           title = "Select your main expertise to view and edit only relevant variables.\nNot selecting any box shows all variables.\nDefaults apply to unselected categories in simulations.",
                            style = "cursor: help; margin-left: 8px;"
                          )
                        ),
@@ -235,14 +229,20 @@ ui <- fluidPage(
               #     )
               #   )
               # ),
-              tags$h5(
-                "This app serves to simulate the present value of converting a treeless arable field into alley cropping with fruit and/or high-value timber trees. It also allows to account for hedgerows in the hedges of the alley cropping field.\n
-              You can modify the value ranges of all the variables of the calculator by opening the tabs in left-hand side of the screen.\n
-              By doing so, you can account for the locally-specific environment and socio-economic context.\n
-              In the tab 'Expertise categories' you can select the categories for which you want to modify the default values. This is useful if you do not feel confident enough to provide estimates for all the variables of the model.\n
-              When clicking 'Run the model', the app will perform multiple runs of the model, each with a unique combination of values of the input variables, always within the range defined by the bars of the left-hand side tabs.\n
-              After the model is computed, the results will be displayed here below\n
-              In the tab 'Funding schemes' you can select the funding scheme of your region of interest. If you do not find the funding schemes of your regions of interest, please contact us to include it (pkasargo@uni-bonn.de)"
+              # Provide brief explanation of the DA model
+              tags$h6(
+                "This app simulates the present value of converting a treeless arable field into an alley cropping system with apple trees, based on a real farm in Germany.",
+                tags$br(),
+                tags$br(),
+                "Use the tabs on the left to adjust variable ranges based on your local conditions or design goals.",
+                tags$br(),
+                tags$br(),
+                "Click ‘Run model’ to perform a Monte Carlo simulation using random combinations from your defined ranges.You can save/load inputs, and once the model runs, results will appear below and you can save these figures.",
+                tags$br(),
+                tags$br(),
+                "In the ‘Funding schemes’ tab, select any relevant funding options for your region.",
+                tags$br(),
+                "We welcome your feedback and encourage you to suggest additional funding schemes for your region. Feel free to contact us at pkasargo@uni-bonn.de or afuelle1@uni-bonn.de"
               ),
               # tags$a(
               #   "Click here for latest info on Sustainable Farming Incentive",
@@ -266,10 +266,10 @@ ui <- fluidPage(
               uiOutput("plot1_dl_ui"),
               br(), br(),br(), br(),
               
-              # plotOutput("plot2_ui", height = "550px"),
-              # br(),
-              # uiOutput("plot2_dl_ui"),
-              # br(), br(),br(), br(),
+              plotOutput("plot2_ui", height = "550px"),
+              br(),
+              uiOutput("plot2_dl_ui"),
+              br(), br(),br(), br(),
               
               plotOutput("plot3_ui", height = "550px"),
               br(),
@@ -619,7 +619,7 @@ server <- function(input, output, session) {
     # View(input_file)
     
     total_funding <- funding$total_funding_with_private()
-    
+    # adds selected funidng category_name from the processing performed in funidng_server.R
     input_file <- 
       data.frame(variable = names(total_funding),
                  lower = unname(total_funding),
@@ -628,7 +628,7 @@ server <- function(input, output, session) {
       bind_rows(input_file, .)
     
     # View(input_file)
-    
+    # Assign all funding category_name that are not selected by the user 0 so that the error of not found doesn't get triggered. 
     funding_names <- 
       c("funding_onetime_percentage_initial_cost_schemes_c", "annual_funding_schemes_c",
         "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c",
@@ -831,7 +831,7 @@ server <- function(input, output, session) {
           margin = margin(b = 10)
         ),
         plot.caption  = element_textbox_simple(
-          size   = 13,
+          size   = 14,
           width  = unit(1, "npc"),
           halign = 0,              # left-aligned
           margin = margin(t = 6),
@@ -860,38 +860,40 @@ server <- function(input, output, session) {
     
     plot1 <-
       decisionSupport::plot_distributions(mcSimulation_object = mc_data,
-                                          vars = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
+                                          vars = c("NPV_Treeless_System", "NPV_Agroforestry_System"),
                                           method = "boxplot",
-                                          old_names = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
-                                          new_names = c("Monoculture", "Agroforestry without funding", "Agroforestry with current funding", "Agroforestry with DeFAF fund"),
+                                          old_names = c("NPV_Treeless_System", "NPV_Agroforestry_System"),
+                                          new_names = c("Monoculture (baseline)", "Agroforestry with current funding"),
                                           x_axis_name = "NPV (€)",
-                                          y_axis_name = "Probability") |>
+                                          y_axis_name = "Decision Options") |>
       add_meta(
         title    = "Figure 1. Probabilistic distributions of Net Present Value",
-        subtitle = "Agroforestry intervention with, without and DeFAF suggested funding (green) vs. conventional farming (blue)",
-        caption  = "Figure 1 shows the Net Present Value (NPV) distributions of 
-        the decision to establish the alley cropping system (green) and the 
-        decision to continue farming without planting trees (blue) for the timescope
-        of interest. The x-axis displays NPV values (i.e.: the sum of discounted
-        annual cash flows). The y-axis displays the probability of each NPV amount
-        to occur (i.e.: higer y-values indicate higher probability"
+        subtitle = "Agroforestry intervention with current funding vs. conventional farming",
+        caption  = "Figure 1 shows the comparison of Net Present Value (NPV) outcomes for agroforestry (Apple alley cropping) vs monoculture system (baseline). The x-axis displays NPV values (i.e., the sum of discounted annual cash flows). The higher and wider the box, the greater the potential return and variability in outcomes under that system."
       )
     
-    # plot2 <- decisionSupport::plot_distributions(
-    #   mc_data, "NPV_decision_AF1",
-    #   method     = "smooth_simple_overlay",
-    #   old_names  = "NPV_decision_AF1",
-    #   new_names  = "Agroforestry – Treeless",
-    #   x_axis_name= "NPV (€)",
-    #   y_axis_name= "Probability") |>
-    #   add_meta(
-    #     title    = "Figure 2. Distribution of the *incremental* NPV",
-    #     subtitle = "Difference between agroforestry and treeless farming under identical scenarios",
-    #     caption  = "Figure 2 shows the Net Present Value (NPV) distributions of the decision to establish the alley cropping system (green) 
-    #             as compared to the decision to continue farming without planting trees for the timescope of interest (i.e.: NPV agroforestry - NPV treeless under identical real-world scenarios).
-    #             The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows).
-    #             The y-axis displays the probability of each NPV amount to occur (i.e.: higer y-values indicate higher probability"
-    #     , legend = "none")
+    # vars = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
+    # method = "boxplot",
+    # old_names = c("NPV_Treeless_System", "NPV_Agroforestry_no_fund", "NPV_Agroforestry_System", "NPV_DeFAF_Suggestion"),
+    # new_names = c("Monoculture", "Agroforestry without funding", "Agroforestry with current funding", "Agroforestry with DeFAF-suggested funding"),
+    # x_axis_name = "NPV (€)",
+    
+    
+    plot2 <- decisionSupport::plot_distributions(
+      mc_data, "NPV_decis_AF_ES3",
+      method     = "smooth_simple_overlay",
+      old_names  = "NPV_decis_AF_ES3",
+      new_names  = "Agroforestry – Treeless",
+      x_axis_name= "NPV (€)",
+      y_axis_name= "Probability") |>
+      add_meta(
+        title    = "Figure 2. Distribution of the *incremental* NPV",
+        subtitle = "Difference between agroforestry and treeless farming under identical scenarios",
+        caption  = "Figure 2 shows the Net Present Value (NPV) distributions of the decision to establish the Apple Alley Cropping system
+                as compared to the decision to continue with monoculture for the specified time (i.e., NPV agroforestry - NPV monoculture under identical real-world scenarios).
+                The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows).
+                The y-axis displays the probability of each NPV amount to occur (i.e., higer y-values indicate higher probability)"
+        , legend = "none")
     
     plot3 <- decisionSupport::plot_distributions(
       mc_data,
@@ -900,14 +902,13 @@ server <- function(input, output, session) {
       old_names = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
       new_names = c("Agroforestry without funding – Treeless", "Agroforestry with current funding – Treeless", "Agroforestry with DeFAF suggested fudning – Treeless"),
       x_axis_name = "NPV (€)",
-      y_axis_name = "Probability") |>
+      y_axis_name = "Funding Options") |>
       add_meta(
-        title    = "Figure 2. Cost structure of the agroforestry project",
-        caption  = 'Figure 2 shows the costs (expressed in €) associated with each cost category of the decision to develop an alley-cropping system.
-                 The middle line of each box shows the median of its probability distribution.
-                 The extremes of each boxes show the first and third quartile of the probability distribution. 
-                 The extremes of the lines show the 5th and 95th percentile of the probability distribution. Dots are outliers beyond these percentiles.
-                 Please note that the "Bureaucratic work" and the "Maintenance" boxes show the sum of the annual costs of every year over the timescope period, whereas the "Planning and design" and "Planting" boxes occur only in one year.'
+        title    = "Figure 3. Net Present Value (NPV) Outcomes Across Funding Scenarios for Apple Alley Cropping",
+        subtitle = "Agroforestry intervention with, without and DeFAF-suggested funding",
+        caption  = 'Figure 3 shows the comparison of net present value (NPV) outcomes for different agroforestry funding schemes. The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows); each colored boxplot represents a funding scenario, showing the range and distribution of simulation results from the probabilistic model.
+        The higher and wider the box, the greater the potential return and variability in outcomes under that funding.
+Scenarios involving funding (like DeFAF-suggested or ES3 and regional) generally show higher NPV ranges than the No funding, however it not necessarily better suggesting the current financial support is insufficient to sustain agroforestry.'
       )
     
     plot4 <- decisionSupport::plot_cashflow(
@@ -916,8 +917,9 @@ server <- function(input, output, session) {
       y_axis_name = "Annual cash-flow (€)",
       facet_labels = "") |>
       add_meta(
-        title   = "Figure 3. Annual cash-flow of the agroforestry intervention", 
-        caption = 'Figure 3 shows the annual balance (expressed in €) of alley-cropping in the intervened field.'
+        title   = "Figure 4. Annual cash-flow of the agroforestry intervention", 
+        subtitle = "Projected yearly cash-flow variability for an agroforestry system over time",
+        caption = 'Figure 4 shows how annual cash-flow from an agroforestry intervention is expected to evolve, based on a probabilistic simulation. The shaded areas represent uncertainty ranges (from lower to upper quantiles), while the blue line shows the median outcome (expressed in €). While early years may involve negative cash flow, profitability tends to improve over time, with increasing stability. The graph highlights the long-term financial potential and risk spread of adopting agroforestry practices.'
       )
     
     plot5 <- decisionSupport::plot_cashflow(
@@ -927,7 +929,8 @@ server <- function(input, output, session) {
       facet_labels = "") |>
       add_meta(
         title   = "Figure 5. Cumulative cash-flow of the agroforestry intervention", 
-        caption = "Figure 5 shows the cumulative annual balance (expressed in €) of alley-cropping in the intervened field."
+        subtitle = "Long-term cumulative cash-flow projection for an agroforestry system",
+        caption = "Figure 5  illustrates how total cash-flow (expressed in €) accumulates over time from an agroforestry intervention, based on a range of simulated outcomes. The shaded areas represent uncertainty (spread of possible results), and the blue line indicates the median trajectory. Cumulative returns grow steadily over time, showing the long-term profitability potential of agroforestry. Despite initial variability, the system trends positively, reinforcing the case for agroforestry as a viable financial investment over the long run."
       )
     
     # plot6 <- decisionSupport::plot_cashflow(
@@ -958,11 +961,11 @@ server <- function(input, output, session) {
       downloadButton("download_plot1", "Download Figure 1")
     })
     
-    # output$plot2_ui <- renderPlot({ plot2 })
-    # make_download("download_plot2", plot2, "Figure2_Incremental_NPV.png")
-    # output$plot2_dl_ui <- renderUI({
-    #   downloadButton("download_plot2", "Download Figure 2")
-    # })
+    output$plot2_ui <- renderPlot({ plot2 })
+    make_download("download_plot2", plot2, "Figure2_Incremental_NPV.png")
+    output$plot2_dl_ui <- renderUI({
+      downloadButton("download_plot2", "Download Figure 2")
+    })
     
     output$plot3_ui <- renderPlot({ plot3 })
     make_download("download_plot3", plot3, "Figure3_Incremental_NPV.png")
