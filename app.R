@@ -620,18 +620,8 @@ server <- function(input, output, session) {
     
     # 3. Append funding scalars
     # View(input_file)
+    #print(1)
     
-    total_funding <- funding$total_funding_with_private()
-    # adds selected funidng category_name from the processing performed in funidng_server.R
-    input_file <- 
-      data.frame(variable = names(total_funding),
-                 lower = unname(total_funding),
-                 upper = unname(total_funding),
-                 distribution = "const") %>% 
-      bind_rows(input_file, .)
-    
-    # View(input_file)
-    # Assign all funding category_name that are not selected by the user 0 so that the error of not found doesn't get triggered. 
     funding_names <- 
       c("funding_onetime_percentage_initial_cost_schemes_c", "annual_funding_schemes_c",
         "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c",
@@ -644,12 +634,29 @@ server <- function(input, output, session) {
                              upper = 0,
                              distribution = "const")
     
-    remain <- funding_names[!(funding_names %in% input_file$variable)]
-    input_file <- funding_df %>% 
-      filter(variable %in% remain) %>% 
-      bind_rows(input_file, .)
+    try(total_funding <- funding$total_funding_with_private())
     
-    # View(input_file)
+    if ("total_funding" %in% ls()) {
+      #print(2)
+      
+      input_file <- 
+        data.frame(variable = names(total_funding),
+                   lower = unname(total_funding),
+                   upper = unname(total_funding),
+                   distribution = "const") %>% 
+        bind_rows(input_file, .)
+      
+      remain <- funding_names[!(funding_names %in% input_file$variable)]
+      input_file <- funding_df %>% 
+        filter(variable %in% remain) %>% 
+        bind_rows(input_file, .)
+      
+      # View(input_file)
+    }else {
+      input_file <- bind_rows(input_file, funding_df)
+    }
+    
+    #View(input_file)
     
     # # 4. Save UI snapshot (optional)
     # saveRDS(list(sheet_names, input_file), "data/Walnut_grain_veg_tub_ui_updated.RDS")
@@ -836,24 +843,28 @@ server <- function(input, output, session) {
           margin = margin(b = 10)
         ),
         plot.caption  = element_textbox_simple(
-          size   = 14,
-          width  = unit(1, "npc"),
+          size   = 16,
+          width  = unit(0.98, "npc"),
           halign = 0,              # left-aligned
           margin = margin(t = 6),
-          hjust = 0
+          hjust = 0,
+          vjust = 1
         ),
-        axis.title      = element_text(size = 14),
-        legend.text     = element_text(size = 11, hjust = 0.5),
-        legend.position = legend
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.text     = element_text(size = 14, hjust = 0.5),
+        legend.position = legend,
+        plot.margin = margin(t = 50, r = 10, b = 50, l = 10, unit = "pt")
+        
       )  }
   
   # download helper
-  make_download <- function(id, plot_obj, filename, width = 13, height = 5, dpi = 300) {
+  make_download <- function(id, plot_obj, filename, width = 13, height = 5, dpi = 300, scale = 2) {
     output[[id]] <- downloadHandler(
       filename = function() filename,
       content  = function(file) {
         # device is inferred from file extension; here "png"
-        ggsave(file, plot_obj, width = width, height = height, dpi = dpi)
+        ggsave(file, plot_obj, width = width, height = height, dpi = dpi, scale = scale)
       }
     )
   }
@@ -894,11 +905,10 @@ server <- function(input, output, session) {
       y_axis_name= "Probability") |>
       add_meta(
         title    = "Figure 2. Distribution of the *incremental* NPV",
-        subtitle = "Difference between agroforestry and treeless farming under identical scenarios",
-        caption  = "Figure 2 shows the Net Present Value (NPV) distributions of the decision to establish the Apple Alley Cropping system
-                as compared to the decision to continue with monoculture for the specified time (i.e., NPV agroforestry - NPV monoculture under identical real-world scenarios).
-                The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows).
-                The y-axis displays the probability of each NPV amount to occur (i.e., higer y-values indicate higher probability)"
+        subtitle = "Difference between agroforestry and treeless farming under identical conditions",
+        caption  = "Figure 2 shows the NPV distributions of the decision to establish the apple alley cropping system
+                as compared to the decision to continue with monoculture for the specified time (i.e., NPV agroforestry - NPV monoculture under identical conditions).
+                The x-axis displays NPV values (i.e., the sum of discounted annual cash flows) and y-axis displays the probability of each NPV amount to occur (i.e., higer y-values indicate higher probability)"
         , legend = "none")
     
     plot3 <- decisionSupport::plot_distributions(
@@ -906,21 +916,24 @@ server <- function(input, output, session) {
       vars      = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
       method    = "boxplot",
       old_names = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
-      new_names = c("Agroforestry without funding – Treeless", "Agroforestry with current funding – Treeless", "Agroforestry with DeFAF suggested fudning – Treeless"),
+      new_names = c("Agroforestry without funding – Treeless", "Agroforestry with current funding – Treeless", "Agroforestry with DeFAF-suggested fudning – Treeless"),
       x_axis_name = "NPV (€)",
       y_axis_name = "Funding Options") |>
       add_meta(
-        title    = "Figure 3. Net Present Value (NPV) Outcomes Across Funding Scenarios for Apple Alley Cropping",
+        title    = "Figure 3. Net Present Value (NPV) Outcomes Across Funding Schemes for Apple Alley Cropping",
         subtitle = "Agroforestry intervention with, without and DeFAF-suggested funding",
-        caption  = 'Figure 3 shows the comparison of net present value (NPV) outcomes for the decision of different agroforestry funding schemes. The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows); each colored boxplot represents a funding scheme, showing the range and distribution of simulation results from the probabilistic model.
+        caption  = 'Figure 3 shows the comparison of net present value (NPV) outcomes for the decision of different agroforestry funding schemes. The x-axis displays NPV values (i.e., the sum of discounted annual cash flows); each colored boxplot represents a funding scheme, showing the range and distribution of simulation results from the probabilistic model.
         The higher and wider the box, the greater the potential return and variability in outcomes under that funding.
-Scenarios involving funding (like DeFAF-suggested or ES3 and regional) generally show higher NPV ranges than the No funding, however it not necessarily better suggesting the current financial support is insufficient to sustain agroforestry.'
+Scenarios involving funding (like DeFAF-suggested or EcoScheme3 and regional) generally show higher NPV ranges than the No funding, however it not necessarily better suggesting the current financial support is insufficient to sustain agroforestry.'
       )
     
     plot4 <- decisionSupport::plot_cashflow(
       mc_data, "AF_CF",
       x_axis_name = "",
-      y_axis_name = "Annual cash-flow (€)",
+      y_axis_name = "Annual cash-flow from Agroforestry (€)",
+      color_25_75 = "navajowhite",
+      color_5_95 = "green4",
+      color_median = "darkblue",
       facet_labels = "") |>
       add_meta(
         title   = "Figure 4. Annual cash-flow of the agroforestry intervention", 
@@ -931,7 +944,10 @@ Scenarios involving funding (like DeFAF-suggested or ES3 and regional) generally
     plot5 <- decisionSupport::plot_cashflow(
       mc_data, "AF_CCF_ES3",
       x_axis_name = "",
-      y_axis_name = "Cumulative cash-flow (€)",
+      y_axis_name = "Cumulative cash-flow from Agroforestry (€)",
+      color_25_75 = "navajowhite",
+      color_5_95 = "green4",
+      color_median = "darkblue",
       facet_labels = "") |>
       add_meta(
         title   = "Figure 5. Cumulative cash-flow of the agroforestry intervention", 
@@ -968,13 +984,13 @@ Scenarios involving funding (like DeFAF-suggested or ES3 and regional) generally
     })
     
     output$plot2_ui <- renderPlot({ plot2 })
-    make_download("download_plot2", plot2, "Figure2_Incremental_NPV.png")
+    make_download("download_plot2", plot2, "Figure2_Decision_NPV.png")
     output$plot2_dl_ui <- renderUI({
       downloadButton("download_plot2", "Download Figure 2")
     })
     
     output$plot3_ui <- renderPlot({ plot3 })
-    make_download("download_plot3", plot3, "Figure3_Incremental_NPV.png")
+    make_download("download_plot3", plot3, "Figure3_Funding_NPVs.png")
     output$plot3_dl_ui <- renderUI({
       downloadButton("download_plot3", "Download Figure 3")
     })
