@@ -1,3 +1,6 @@
+# RShiny app 
+# Changes to be made to adapt in this script have been commented with 'Provide'
+
 # # Install + load libraries ----
 # packages <- c("shiny", "readxl", "bslib", "sortable", "shinythemes", "shinyWidgets",
 #               "decisionSupport", "tidyverse", "ggridges", "here",
@@ -88,7 +91,7 @@ library(ggh4x)
 source("functions/DA_for_exploring_funding_effects_decision_model.R")
 source("functions/dynamic-helper.R")
 source("functions/funding_server.R")
-# Provide Location of excel workbook conatining the input parameters (prepared for the dynamic-helper)
+# Provide Location of excel workbook containing the input parameters (prepared for the dynamic-helper)
 file_path_vars <- "data/Apple_AF_Steinfurt_wRisk_30.xlsx"
 sheet_meta <- readxl::read_excel(file_path_vars, sheet = "sheet_names",
                                  col_types = c("text", "text"))
@@ -665,6 +668,7 @@ server <- function(input, output, session) {
   
   ## Save/Load functionality ----
   # saveLoadServer("savemod", current_input_table)
+  # Provide Folder name instead of the current 'Germany' to store user saves
   get_base_dir <- function() {
     if (Sys.info()[["sysname"]] == "Windows")
       "user-states/Germany"
@@ -796,6 +800,7 @@ server <- function(input, output, session) {
     input_file <- current_input_table()
     
     # 6. Run Monte-Carlo
+    # Provide model_function
     decisionSupport::mcSimulation(
       estimate          = decisionSupport::as.estimate(input_file),
       model_function    = AF_benefit_with_Risks,
@@ -857,11 +862,12 @@ server <- function(input, output, session) {
   
   observeEvent(mcSimulation_results(), {
     mc_data <- mcSimulation_results()
-    
+    # Provide correct variables for plots
     plot1 <-
       decisionSupport::plot_distributions(mcSimulation_object = mc_data,
                                           vars = c("NPV_Treeless_System", "NPV_Agroforestry_System"),
                                           method = "boxplot",
+                                          #method = "smooth_simple_overlay",
                                           old_names = c("NPV_Treeless_System", "NPV_Agroforestry_System"),
                                           new_names = c("Monoculture (baseline)", "Agroforestry with current funding"),
                                           x_axis_name = "NPV (€)",
@@ -906,7 +912,7 @@ server <- function(input, output, session) {
       add_meta(
         title    = "Figure 3. Net Present Value (NPV) Outcomes Across Funding Scenarios for Apple Alley Cropping",
         subtitle = "Agroforestry intervention with, without and DeFAF-suggested funding",
-        caption  = 'Figure 3 shows the comparison of net present value (NPV) outcomes for different agroforestry funding schemes. The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows); each colored boxplot represents a funding scenario, showing the range and distribution of simulation results from the probabilistic model.
+        caption  = 'Figure 3 shows the comparison of net present value (NPV) outcomes for the decision of different agroforestry funding schemes. The x-axis displays NPV values (i.e.: the sum of discounted annual cash flows); each colored boxplot represents a funding scheme, showing the range and distribution of simulation results from the probabilistic model.
         The higher and wider the box, the greater the potential return and variability in outcomes under that funding.
 Scenarios involving funding (like DeFAF-suggested or ES3 and regional) generally show higher NPV ranges than the No funding, however it not necessarily better suggesting the current financial support is insufficient to sustain agroforestry.'
       )

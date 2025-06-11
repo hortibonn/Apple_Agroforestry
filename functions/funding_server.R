@@ -1,5 +1,6 @@
 # dynamic function to create funding UI based on the structure defined in funding_data.xlsx
 # function to be called in app.R 
+# Provide excel containing funding data as structured in funding_data1.xlsx
 create_funding_ui <- function(id, data_path = "data/funding_data1.xlsx", sheet = 1) {
   ns <- NS(id) # use namespacing instead of concatenating values - ask @Adrain if this is okay...?####
   funding_data <- readxl::read_excel(data_path, sheet = sheet)
