@@ -1027,7 +1027,7 @@ Scenarios involving funding (like DeFAF-suggested or EcoScheme3 and regional) ge
       title = "Run EVPI analysis?",
       "Do you want to assess the Expected Value of Perfect Information (EVPI)?
       This step may take a while, but you can explore the other graphs while the EVPI is processed.
-      The EVPI graph will appear at the bottom of the page, below the last of the other graphs.",
+      The EVPI graph will appear at the bottom of the page, below the last graph.",
       footer = tagList(
         modalButton("No"),
         actionButton("confirm_evpi", "Yes, run EVPI")
@@ -1045,7 +1045,7 @@ Scenarios involving funding (like DeFAF-suggested or EcoScheme3 and regional) ge
           mc_data$x,
           NPV_decision_AF1 = mc_data$y$NPV_decis_AF_ES3
         ))
-        
+        # Provide the NPV_decision variable to calculate EVPI
         evpi_result <- decisionSupport::multi_EVPI(evpi_input, "NPV_decis_AF_ES3")
         
         # saveRDS(evpi_input, "evpi_input_test.rds")
