@@ -278,6 +278,12 @@ AF_benefit_with_Risks <- function(x, varnames)
   # funding_onetime_schemes_c <- funding_onetime_schemes_c %||% 0
   LEADER_subsidy[1] <- funding_onetime_schemes_c
   
+  # external support
+  Annual_external_support <- rep((tree_row_area_c *annual_external_support_c),  n_years_c)
+  Onetime_external_support <- rep(0, n_years_c)
+  Onetime_external_support[1] <- funding_onetime_schemes_c
+  
+  
   #Calculating costs in AF system ####
   #First creating vector, with as many zeros as there are years in the simulation, indicated by the value of "n_years_c" in the input table
   #Then, filling the vector with the cost-specific values
@@ -428,7 +434,7 @@ AF_benefit_with_Risks <- function(x, varnames)
   
   
   #Scenario 1: Agroforestry bottom line with ES3 + regional one-time funding (LEADER Region Steinfurter Land) ####
-  AF_total_benefit <- AF_apple_benefit + AF_maize_benefit + AF_wheat_benefit + AF_barley_benefit + AF_rapeseed_benefit + ES3_subsidy + LEADER_subsidy
+  AF_total_benefit <- AF_apple_benefit + AF_maize_benefit + AF_wheat_benefit + AF_barley_benefit + AF_rapeseed_benefit + ES3_subsidy + LEADER_subsidy + Annual_external_support + Onetime_external_support
   
   AF_bottom_line_benefit <- AF_total_benefit - AF_total_cost
   
