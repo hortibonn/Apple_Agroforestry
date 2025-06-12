@@ -627,7 +627,7 @@ server <- function(input, output, session) {
     funding_names <- 
       c("funding_onetime_percentage_initial_cost_schemes_c", "annual_funding_schemes_c",
         "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c",
-        "funding_onetime_per_m_treerow_schemes_c", "annual_funding_per_m_schemes_c",
+        "funding_onetime_per_m_treerow_schemes_c", "funding_onetime_per_m_hedgerow_schemes_c","annual_funding_per_m_schemes_c",
         "annual_funding_per_tree_schemes_c", "funding_onetime_schemes_c",
         "onetime_external_percentage_incost_schemes_c","onetime_external_percentage_consult_schemes_c",
         "funding_onetime_per_ha_schemes_c", "onetime_external_support_c", "annual_external_support_c")
