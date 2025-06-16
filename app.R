@@ -108,28 +108,32 @@ ui <- fluidPage(
   theme = bs_theme(version = 5,
                    bootswatch = 'flatly',
                    base_font = font_google("Roboto")), 
-  ## Title ----
-  titlePanel(
-    tags$div(
-      style = "display:flex; align-items:center;justify-content:space-between;
+  # Set actual browser tab title and favicon
+  tags$head(
+    tags$title("Agroforestry Decision Support Tool"),
+    tags$link(rel = "shortcut icon", href = "INRES.png")
+  ),
+  
+  tags$div(
+    style = "display:flex; align-items:center;justify-content:space-between;
       width: 100% !important; margin: 20px; padding: 0 15px;
       box-sizing: border-box; background-color: #f2f2f2;",
-      
-      # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
-      tags$img(src = "UniBonnHortiBonn_logo_transparent.png", height = "100px",
-               style = "margin-left: auto; max-width: 20%; height: auto; cursor: pointer;"),
-      # ),
-      # Provide Title of the DA model
-      tags$h2(tags$div("Decision:"),
-              tags$div("convert cropland into apple alley-cropping system"),
-              style = "text-align: center; flex-grow: 1;"),
-      # Provide Project Logo
-      # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
-      tags$img(src = "ReFOREST_logo_horizontal_transparent.png", height = "100px",
-               style = "margin-right: auto; max-width: 30%; height: auto; cursor: pointer;")
-      # ),
-    ),
+    
+    # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
+    tags$img(src = "UniBonnHortiBonn_logo_transparent.png", height = "100px",
+             style = "margin-left: auto; max-width: 20%; height: auto; cursor: pointer;"),
+    # ),
+    # Provide Title of the DA model
+    tags$h2(tags$div("Decision:"),
+            tags$div("convert cropland into apple alley-cropping system"),
+            style = "text-align: center; flex-grow: 1;"),
+    # Provide Project Logo
+    # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
+    tags$img(src = "ReFOREST_logo_horizontal_transparent.png", height = "100px",
+             style = "margin-right: auto; max-width: 30%; height: auto; cursor: pointer;")
+    # ),
   ),
+  
   
   ## Sidebar ----
   sidebarLayout(
@@ -591,7 +595,7 @@ server <- function(input, output, session) {
     #   names(input)[grepl("(_c$|_p$|_t$|_n$|_cond$)", names(input))],
     #   exclude_inputs
     # )
-
+    
     lower_values <- sapply(variables, function(v) {
       val <- input[[v]]
       if (length(val) == 1) as.numeric(val) else as.numeric(val[1])
