@@ -287,12 +287,16 @@ ui <- fluidPage(
               # uiOutput("funding-financial-support"),
               
               br(), br(),
-              plotOutput("plot1_ui", height = "550px"),
+              div(class = "scroll-xy",
+                  plotOutput("plot1_ui", height = "550px"),
+                  ),
               br(),
               uiOutput("plot1_dl_ui"),
               br(), br(),br(), br(),
               
-              plotOutput("plot2_ui", height = "550px"),
+              div(class = "scroll-xy",
+                  plotOutput("plot2_ui", height = "550px"),
+                  ),
               br(),
               uiOutput("plot2_dl_ui"),
               br(), br(),br(), br(),
@@ -304,27 +308,35 @@ ui <- fluidPage(
               uiOutput("plot3_dl_ui"),
               br(), br(),br(), br(),
               
-              plotOutput("plot4_ui", height = "550px"),
+              div(class = "scroll-xy",
+                  plotOutput("plot4_ui", height = "550px"),
+                  ),
               br(),
               uiOutput("plot4_dl_ui"),
               br(), br(),br(), br(),
               
-              plotOutput("plot5_ui", height = "550px"),
+              div(class = "scroll-xy",
+                  plotOutput("plot5_ui", height = "550px"),
+                  ),
               br(),
               uiOutput("plot5_dl_ui"),
               br(), br(),br(), br(),
               
+              # div(class = "scroll-xy",
               # plotOutput("plot6_ui", height = "550px"),
+              # ),
               # br(),
               # uiOutput("plot6_dl_ui"),
               # br(), br(),br(), br(),
               # 
-              # plotOutput("plot7_ui", height = "550px"),
+              # div(class = "scroll-xy", plotOutput("plot7_ui", height = "550px"),),
               # br(),
               # uiOutput("plot7_dl_ui"),
               # br(), br(),br(), br(),
               
-              plotOutput("plot8_ui", height = "550px"),
+              div(class = "scroll-xy", 
+                  plotOutput("plot8_ui", height = "550px"),
+                 ),
               br(),
               uiOutput("plot8_dl_ui"),
               br(), br(),br(), br(),
@@ -860,13 +872,13 @@ server <- function(input, output, session) {
           face   = "bold",
           width  = unit(1, "npc"),  # full plot width
           halign = 0.5,              # centered
-          margin = margin(b = 25)
+          margin = margin(t = 6,b = 12)
         ),
         plot.subtitle = element_textbox_simple(
           size   = 18,
           width  = unit(1, "npc"),
           halign = 0.5,
-          margin = margin(b = 10)
+          margin = margint = 6,b = 12)
         ),
         plot.caption  = element_textbox_simple(
           size   = 16,
