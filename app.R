@@ -111,7 +111,24 @@ ui <- fluidPage(
   # Set actual browser tab title and favicon
   tags$head(
     tags$title("Agroforestry Decision Support Tool"),
-    tags$link(rel = "shortcut icon", href = "INRES.png")
+    tags$link(rel = "shortcut icon", href = "INRES.png"),
+    
+    tags$style(HTML("
+    /* Scroll wrapper: scrolls horizontally *and* vertically only when needed */
+    .scroll-xy {
+      overflow-x: auto;                 /* left–right scroll  */
+      overflow-y: auto;                 /* top–bottom scroll  */
+      -webkit-overflow-scrolling: touch;/* smooth on iOS      */
+      max-height: 80vh;                 /* optional: stop it taking more than
+                                         80 % of the viewport height       */
+  }
+  
+  /* Keep any Shiny plot inside that wrapper from shrinking */
+  .scroll-xy .shiny-plot-output {
+    min-width: 900px;                 /* choose your desktop width */
+  }
+                    ")
+               )
   ),
   
   tags$div(
@@ -280,7 +297,9 @@ ui <- fluidPage(
               uiOutput("plot2_dl_ui"),
               br(), br(),br(), br(),
               
-              plotOutput("plot3_ui", height = "550px"),
+              div(class = "scroll-xy",
+                  plotOutput("plot3_ui", height = "700px"),
+              ),
               br(),
               uiOutput("plot3_dl_ui"),
               br(), br(),br(), br(),
@@ -841,7 +860,7 @@ server <- function(input, output, session) {
           face   = "bold",
           width  = unit(1, "npc"),  # full plot width
           halign = 0.5,              # centered
-          margin = margin(b = 6)
+          margin = margin(b = 25)
         ),
         plot.subtitle = element_textbox_simple(
           size   = 18,
@@ -853,7 +872,7 @@ server <- function(input, output, session) {
           size   = 16,
           width  = unit(0.98, "npc"),
           halign = 0,              # left-aligned
-          margin = margin(t = 6),
+          margin = margin(t = 6,b = 12),
           hjust = 0,
           vjust = 1
         ),
@@ -923,7 +942,7 @@ server <- function(input, output, session) {
       vars      = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
       method    = "boxplot",
       old_names = c("NPV_decis_no_fund", "NPV_decis_AF_ES3", "NPV_decis_DeFAF"),
-      new_names = c("Agroforestry without funding – Treeless", "Agroforestry with current funding – Treeless", "Agroforestry with DeFAF-suggested fudning – Treeless"),
+      new_names = c("Agroforestry without\nfunding - Treeless", "Agroforestry with\ncurrent funding - Treeless", "Agroforestry with\nDeFAF-suggested funding - Treeless"),
       x_axis_name = "NPV (€)",
       y_axis_name = "Funding Options") |>
       add_meta(
