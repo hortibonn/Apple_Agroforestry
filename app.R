@@ -128,7 +128,7 @@ ui <- fluidPage(
     min-width: 900px;                 /* choose your desktop width */
   }
                     ")
-               )
+    )
   ),
   
   tags$div(
@@ -289,14 +289,14 @@ ui <- fluidPage(
               br(), br(),
               div(class = "scroll-xy",
                   plotOutput("plot1_ui", height = "550px"),
-                  ),
+              ),
               br(),
               uiOutput("plot1_dl_ui"),
               br(), br(),br(), br(),
               
               div(class = "scroll-xy",
                   plotOutput("plot2_ui", height = "550px"),
-                  ),
+              ),
               br(),
               uiOutput("plot2_dl_ui"),
               br(), br(),br(), br(),
@@ -310,14 +310,14 @@ ui <- fluidPage(
               
               div(class = "scroll-xy",
                   plotOutput("plot4_ui", height = "550px"),
-                  ),
+              ),
               br(),
               uiOutput("plot4_dl_ui"),
               br(), br(),br(), br(),
               
               div(class = "scroll-xy",
                   plotOutput("plot5_ui", height = "550px"),
-                  ),
+              ),
               br(),
               uiOutput("plot5_dl_ui"),
               br(), br(),br(), br(),
@@ -336,7 +336,7 @@ ui <- fluidPage(
               
               div(class = "scroll-xy", 
                   plotOutput("plot8_ui", height = "550px"),
-                 ),
+              ),
               br(),
               uiOutput("plot8_dl_ui"),
               br(), br(),br(), br(),
@@ -878,23 +878,23 @@ server <- function(input, output, session) {
           size   = 18,
           width  = unit(1, "npc"),
           halign = 0.5,
-          margin = margint = 6,b = 12)
-        ),
-        plot.caption  = element_textbox_simple(
-          size   = 16,
-          width  = unit(0.98, "npc"),
-          halign = 0,              # left-aligned
-          margin = margin(t = 6,b = 12),
-          hjust = 0,
-          vjust = 1
-        ),
-        axis.title = element_text(size = 16),
-        axis.text = element_text(size = 14),
-        legend.text     = element_text(size = 14, hjust = 0.5),
-        legend.position = legend,
-        plot.margin = margin(t = 50, r = 10, b = 50, l = 10, unit = "pt")
-        
-      )  }
+          margin = margin(t = 6,b = 12)
+      ),
+    plot.caption  = element_textbox_simple(
+      size   = 16,
+      width  = unit(0.98, "npc"),
+      halign = 0,              # left-aligned
+      margin = margin(t = 6,b = 12),
+      hjust = 0,
+      vjust = 1
+    ),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.text     = element_text(size = 14, hjust = 0.5),
+    legend.position = legend,
+    plot.margin = margin(t = 50, r = 10, b = 50, l = 10, unit = "pt")
+    
+    )  }
   
   # download helper
   make_download <- function(id, plot_obj, filename, width = 13, height = 5, dpi = 300, scale = 2) {
