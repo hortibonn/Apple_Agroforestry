@@ -346,7 +346,7 @@ ui <- fluidPage(
                   tags$a("Disclaimer", href = "https://agroreforest.eu/reforest-tools-disclaimer/",
                 target = "_blank"),
                      " | ",  
-                tags$a("View Source", href = "https://github.com/hortibonn/Silvopastoral_Livestock/",
+                tags$a("View Source", href = "https://github.com/hortibonn/Apple_Agroforestry/",
                 target = "_blank")
                   ),
               br(), br(),br(), br(),
