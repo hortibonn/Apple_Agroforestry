@@ -93,8 +93,7 @@ library(ggh4x)
 # Provide Location of DA model script, dynamic-helper and funding-server scripts
 # source("functions/saveLoad-module.R")
 #source("functions/DA_for_exploring_funding_effects_data_visualisation.R")
-#source("functions/DA_for_exploring_funding_effects_decision_model.R")
-source("functions/DA_model.R")
+source("functions/DA_for_exploring_funding_effects_decision_model.R")
 source("functions/dynamic-helper.R")
 source("functions/funding_server.R")
 # Provide Location of excel workbook containing the input parameters (prepared for the dynamic-helper)
@@ -111,323 +110,258 @@ sheet_icons <- setNames(sheet_meta$icon, sheet_meta$sheet_names)
 # UI ----
 ui <- fluidPage(
   
-  theme = bs_theme(
-    version = 5,
-    bootswatch = "flatly",
-    base_font = font_google("Roboto"),
-    primary = "#1a5340",
-    "border-radius" = "1rem"
-  ),
+  theme = bs_theme(version = 5,
+                   bootswatch = 'flatly',
+                   base_font = font_google("Roboto")),
   
   use_waiter(),
   
+  # Set actual browser tab title and favicon
   tags$head(
+    tags$title("Agroforestry Decision Support Tool"),
     tags$link(rel = "shortcut icon", href = "INRES.png"),
     
-    # Unified CSS + JS
-    tags$link(rel = "stylesheet", href = "theme.css"),
-    tags$script(src = "app.js"),
-    
-    # Brand theme tokens
-    tags$script(HTML("document.documentElement.setAttribute('data-theme','reforest');"))
-  ),
+    tags$style(HTML("
+    /* Scroll wrapper: scrolls horizontally *and* vertically only when needed */
+    .scroll-xy {
+      overflow-x: auto;                 /* left–right scroll  */
+      overflow-y: auto;                 /* top–bottom scroll  */
+      -webkit-overflow-scrolling: touch;/* smooth on iOS      */
+      max-height: 80vh;                 /* optional: stop it taking more than
+                                         80 % of the viewport height       */
+  }
   
-  # Header (no inline styles)
-  tags$div(
-    class = "app-header",
-    tags$img(
-      src = "UniBonnHortiBonn_logo_transparent.png",
-      height = "200px",
-      class = "app-logo"
-    ),
-    tags$h2(
-      class = "app-title",
-      tags$div("Decision:"),
-      tags$div("convert cropland into apple alley-cropping system")
-    ),
-    tags$img(
-      src = "ReFOREST_logo_horizontal_transparent.png",
-      height = "200px",
-      class = "app-logo"
+  /* Keep any Shiny plot inside that wrapper from shrinking */
+  .scroll-xy .shiny-plot-output {
+    min-width: 900px;                 /* choose your desktop width */
+  }
+                    ")
     )
   ),
   
-  # Sidebar + main content
-  sidebarLayout(
+  tags$div(
+    style = "display:flex; align-items:center;justify-content:space-between;
+      width: 100% !important; margin: 20px; padding: 0 15px;
+      box-sizing: border-box; background-color: #f2f2f2;",
     
-    sidebarPanel(
-      width = 4,
-      class = "page-shell page-shell--gradient",
-      
-      # Wrap the accordion in a card container + sidebar scrolling
-      accordion(
-        id = "side_accordion",
-        open = FALSE,
-        
-        # (Your existing accordion panels go here unchanged.)
-        # I am not changing the internal inputs here, only container styling.
-        div(
-          class = "text-center",
-          actionButton("run_simulation", "Run Model",
-                       icon = icon("play"), class = "btn-primary")
-        ),
-        br(),
-        ### Save/Load functionality ----
-        accordion_panel(
-          title = "Save / Load project", icon = icon("folder-open"),
-          tagList(
-            textInput("state_name", "Project name"),
-            actionButton("save_btn",  label = tagList(icon("floppy-disk"),  "Save"  ), class = "btn btn-dark"),
-            
-            br(), br(),
-            selectInput("state_picker", "Saved versions", choices = NULL),
-            
-            fluidRow(
-              column(6, actionButton("load_btn",   tagList(icon("rotate"),  "Load"  ), class = "btn btn-secondary")),
-              column(6, actionButton("delete_btn", tagList(icon("trash"),   "Delete"), class = "btn btn-secondary"))
-            ),
-            hr(),
-            downloadButton("download_csv", label = tagList(icon("download"), "Download current inputs (.csv)"))
-          )
-        ),
-        
-        ### Expertise filter ----
-        accordion_panel(
-          title = "Expertise categories",
-          icon = icon("clipboard-question"),
-          tagList(
-            tags$h5(
-              "Expertise categories",
-              tags$span(
-                class = "help-icon",
-                icon("circle-question"),
-                title = "Select your main expertise to view and edit only relevant variables.\nNot selecting any box shows all variables.\nDefaults apply to unselected categories in simulations."
-              )
-            ),
-            uiOutput("category_filter_ui")
-          )
-        ),
-        # ### Crop selector and rotation ----
-        # accordion_panel(
-        #   title = "Crops",
-        #   icon = icon("clipboard-question"),
-        #   accordion_panel(
-        #     title = "Crop selector",
-        #     icon = icon("seedling"),
-        #     uiOutput("crop_rot_filter_ui")
-        #   ),
-        #   uiOutput("rotation_builder_ui"),   # rendered only when crops picked
-        #   verbatimTextOutput("rotation_vec") # convenient preview
-        # ),
-        
-        ### funding scheme ----
-        accordion_panel(
-          title = "Funding schemes",
-          icon  = icon("euro-sign"),
-          value = "funding_panel",
-          create_funding_ui("funding")
-        ),
-        br(),
-        uiOutput("dynamic_element_ui")
-        
-      )
+    # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
+    tags$img(src = "UniBonnHortiBonn_logo_transparent.png", height = "100px",
+             style = "margin-left: auto; max-width: 20%; height: auto; cursor: pointer;"),
+    # ),
+    # Provide Title of the DA model
+    tags$h2(tags$div("Decision:"),
+            tags$div("convert cropland into apple alley-cropping system"),
+            style = "text-align: center; flex-grow: 1;"),
+    # Provide Project Logo
+    # tags$a(href = "https://www.uni-bonn.de", target = "_blank",
+    tags$img(src = "ReFOREST_logo_horizontal_transparent.png", height = "100px",
+             style = "margin-right: auto; max-width: 30%; height: auto; cursor: pointer;")
+    # ),
+  ),
+  
+  
+  ## Sidebar ----
+  sidebarLayout(
+    sidebarPanel(width = 4,
+                 style = "height: 100%; overflow-y: auto",
+                 
+                 accordion(
+                   id = "collapseSidebar",
+                   open = FALSE,
+                   
+                   div(
+                     class = "text-center",
+                     actionButton("run_simulation", "Run Model",
+                                  icon = icon("play"), class = "btn-primary")
+                   ),
+                   br(),
+                   
+                   ### Save/Load functionality ----
+                   # saveLoadUI("savemod"),
+                   accordion_panel(
+                     title = "Save / Load project", icon = icon("folder-open"),
+                     tagList(
+                       textInput("state_name", "Project name"),
+                       actionButton("save_btn",  label = tagList(icon("floppy-disk"),  "Save"  ), class = "btn btn-dark"),
+                       
+                       br(), br(),
+                       selectInput("state_picker", "Saved versions", choices = NULL),
+                       
+                       fluidRow(
+                         column(6, actionButton("load_btn",   tagList(icon("rotate"),  "Load"  ), class = "btn btn-secondary")),
+                         column(6, actionButton("delete_btn", tagList(icon("trash"),   "Delete"), class = "btn btn-secondary"))
+                       ),
+                       hr(),
+                       downloadButton("download_csv", label = tagList(icon("download"), "Download current inputs (.csv)"))
+                     )
+                   ),
+                   
+                   
+                   
+                   ### Expertise filter ----
+                   accordion_panel(
+                     title = "Expertise categories",
+                     icon = icon("clipboard-question"),
+                     tagList(
+                       tags$h5(
+                         "Expertise categories",
+                         tags$span(
+                           icon("circle-question"),
+                           title = "Select your main expertise to view and edit only relevant variables.\nNot selecting any box shows all variables.\nDefaults apply to unselected categories in simulations.",
+                           style = "cursor: help; margin-left: 8px;"
+                         )
+                       ),
+                       uiOutput("category_filter_ui")
+                     )
+                   ),
+                   
+                   # ### Crop selector and rotation ----
+                   # accordion_panel(
+                   #   title = "Crops",
+                   #   icon = icon("clipboard-question"),
+                   #   accordion_panel(
+                   #     title = "Crop selector",
+                   #     icon = icon("seedling"),
+                   #     uiOutput("crop_rot_filter_ui")
+                   #   ),
+                   #   uiOutput("rotation_builder_ui"),   # rendered only when crops picked
+                   #   verbatimTextOutput("rotation_vec") # convenient preview
+                   # ),
+                   
+                   ### funding scheme ----
+                   accordion_panel(
+                     title = "Funding schemes", icon = icon("euro-sign"),
+                     create_funding_ui("funding")
+                   ),
+                   br(),
+                   uiOutput("dynamic_element_ui")
+                   
+                 )
+                 
     ),
     
-    mainPanel(
-      width = 8,
-      
-      tabsetPanel(
-        id = "main_tabs",
-        selected = "Intro",
-        
-        # ======================================================
-        # Intro tab (new structured layout)
-        # ======================================================
-        tabPanel(
-          title = "Intro",
-          value = "Intro",
-          
-          div(
-            class = "page-shell page-shell--gradient stack stack--lg",
-            
-            h2(class = "heading heading--lg heading--center",
-               "Apple alley-cropping: Monte Carlo economic assessment"
-            ),
-            
-            div(
-              class = "card",
-              p(
-                class = "text",
-                "This app simulates the present value of converting a treeless arable field into an alley cropping system with apple trees, based on a real farm in Germany."
+    ## Main Panel ----
+    mainPanel(width = 8,
+              # tags$p(
+              #   tags$strong(
+              #     tagList(
+              #       "This app simulates the present value of converting a treeless arable field into alley cropping with fruit and/or high-value timber trees (hedgerows included).",
+              #       # tags$br(),
+              #       "Open the tabs on the left to adjust the value ranges of every model variable so they reflect local conditions.",
+              #       # tags$br(),
+              #       "If you do not feel confident about all inputs, use the ",
+              #       tags$em("'Expertise categories'"),
+              #       " tab to limit edits to those you know.",
+              #       # tags$br(),
+              #       "Press ", tags$em("Run the model"), " to launch multiple Monte-Carlo runs; each uses a random combination of input values drawn from your ranges.",
+              #       # tags$br(),
+              #       "After computation the results appear below.",
+              #       # tags$br(),
+              #       "Under ", tags$em("Funding schemes"), " you can choose the scheme for your region. Missing schemes? Let us know at mjimene1@uni-bonn.de."
+              #     )
+              #   )
+              # ),
+              # Provide brief explanation of the DA model
+              tags$h6(
+                "This app simulates the present value of converting a treeless arable field into an alley cropping system with apple trees, based on a real farm in Germany.",
+                tags$br(),
+                tags$br(),
+                "Use the tabs on the left to adjust variable ranges based on your local conditions or design goals.",
+                tags$br(),
+                tags$br(),
+                "Click ‘Run model’ to perform a Monte Carlo simulation using random combinations from your defined ranges.You can save/load inputs, and once the model runs, results will appear below and you can save these figures.",
+                tags$br(),
+                tags$br(),
+                "In the ‘Funding schemes’ tab, select any relevant funding options for your region.",
+                tags$br(),
+                "DeFAF-suggested funding for German agroforestry: Annual support of 600 € per ha of wooded area and investment costs are to be funded at 100 % for first 10 ha of wooded area, 80 % for the next 10 ha, 50 % for additional area.",
+                tags$br(),
+                "We welcome your feedback and encourage you to suggest additional funding schemes for your region. Feel free to contact",
+                tags$a(href = "mailto:pkasargo@uni-bonn.de", "Prajna Kasargodu Anebagilu"), "or", tags$a(href = "mailto:afuelle1@uni-bonn.de", "Adrian Fuelle."),
               ),
-              p(
-                class = "text",
-                "Use the tabs on the left to adjust variable ranges based on your local conditions or design goals."
+              # tags$a(
+              #   "Click here for latest info on Sustainable Farming Incentive",
+              #   href = "https://www.gov.uk/government/publications/sustainable-farming-incentive-scheme-expanded-offer-for-2024",
+              #   target="_blank",
+              #   class = "my-btn"
+              # ),
+              br(), br(),
+              
+              #titlePanel("Selected Financial Supports"),
+              #create_funding_ui("funding"),        # UI part from the module
+              #uiOutput("financial_support_links"),
+              tags$h4("Selected Financial Supports"),
+              tableOutput("summary"),
+              #verbatimTextOutput("summary"), 
+              # uiOutput("funding-financial-support"),
+              
+              br(), br(),
+              div(class = "scroll-xy",
+                  plotOutput("plot1_ui", height = "550px"),
               ),
-              p(
-                class = "text",
-                "Click ‘Run model’ to perform a Monte Carlo simulation using random combinations from your defined ranges. You can save/load inputs, and once the model runs, results will appear below and you can save these figures."
-              )
-            ),
-            
-            h3(class = "heading heading--md heading--center", "How it works"),
-            
-            div(
-              class = "card",
-              div(
-                class = "step",
-                div(class = "step__badge", "1"),
-                div(
-                  class = "step__content",
-                  h4(class = "step__title", "Set input ranges"),
-                  p(class = "step__text",
-                    "Use the sidebar tabs to tailor ranges to your farm context and design goals."
+              br(),
+              uiOutput("plot1_dl_ui"),
+              br(), br(),br(), br(),
+              
+              div(class = "scroll-xy",
+                  plotOutput("plot2_ui", height = "550px"),
+              ),
+              br(),
+              uiOutput("plot2_dl_ui"),
+              br(), br(),br(), br(),
+              
+              div(class = "scroll-xy",
+                  plotOutput("plot3_ui", height = "700px"),
+              ),
+              br(),
+              uiOutput("plot3_dl_ui"),
+              br(), br(),br(), br(),
+              
+              div(class = "scroll-xy",
+                  plotOutput("plot4_ui", height = "550px"),
+              ),
+              br(),
+              uiOutput("plot4_dl_ui"),
+              br(), br(),br(), br(),
+              
+              div(class = "scroll-xy",
+                  plotOutput("plot5_ui", height = "550px"),
+              ),
+              br(),
+              uiOutput("plot5_dl_ui"),
+              br(), br(),br(), br(),
+              
+              # div(class = "scroll-xy",
+              # plotOutput("plot6_ui", height = "550px"),
+              # ),
+              # br(),
+              # uiOutput("plot6_dl_ui"),
+              # br(), br(),br(), br(),
+              # 
+              # div(class = "scroll-xy", plotOutput("plot7_ui", height = "550px"),),
+              # br(),
+              # uiOutput("plot7_dl_ui"),
+              # br(), br(),br(), br(),
+              
+              div(class = "scroll-xy", 
+                  plotOutput("plot8_ui", height = "550px"),
+              ),
+              br(),
+              uiOutput("plot8_dl_ui"),
+              tags$img(src = "Funding_declaration.png", height = "100px",
+                       style = "margin-right: auto; max-width: 100%; height: auto; cursor: pointer;"),
+                tags$p(
+                  tags$a("Disclaimer", href = "https://agroreforest.eu/reforest-tools-disclaimer/",
+                target = "_blank"),
+                     " | ",  
+                tags$a("View Source", href = "https://github.com/hortibonn/Apple_Agroforestry/",
+                target = "_blank")
                   ),
-                  div(
-                    class = "tip",
-                    span(class = "tip__icon", "Tip:"),
-                    span(class = "tip__text",
-                         "Hover over parameters (where available) for additional explanations."
-                    )
-                  )
-                )
-              )
-            ),
-            
-            div(
-              class = "card",
-              div(
-                class = "step",
-                div(class = "step__badge", "2"),
-                div(
-                  class = "step__content",
-                  h4(class = "step__title", "Run the model"),
-                  p(class = "step__text",
-                    "Click ‘Run model’ to generate random combinations from your ranges and simulate outcomes."
-                  )
-                )
-              )
-            ),
-            
-            div(
-              class = "card",
-              div(
-                class = "step",
-                div(class = "step__badge", "3"),
-                div(
-                  class = "step__content",
-                  h4(class = "step__title", "Review results and export"),
-                  p(class = "step__text",
-                    "After the run completes, results appear in the Results tab. Save figures and download current inputs as needed."
-                  )
-                )
-              )
-            ),
-            
-            div(
-              class = "card",
-              div(
-                class = "step",
-                div(class = "step__badge", "4"),
-                div(
-                  class = "step__content",
-                  h4(class = "step__title", "Funding schemes"),
-                  p(class = "step__text",
-                    "In the ‘Funding schemes’ tab, select relevant options for your region."
-                  ),
-                  p(
-                    class = "step__text",
-                    "DeFAF-suggested funding for German agroforestry: Annual support of 600 € per ha of wooded area; investment costs funded at 100% for first 10 ha of wooded area, 80% for the next 10 ha, 50% for additional area."
-                  )
-                )
-              )
-            ),
-            
-            h3(class = "heading heading--md heading--center", "Feedback"),
-            
-            div(
-              class = "card",
-              p(class = "text", "We welcome your feedback and encourage you to suggest additional funding schemes for your region."),
-              p(class = "text", "Feel free to contact:"),
-              tags$a(
-                class = "contact-link",
-                href = "mailto:pkasargo@uni-bonn.de",
-                "Prajna Kasargodu Anebagilu"
-              ),
-              p(class = "text", " or "),
-              tags$a(
-                class = "contact-link",
-                href = "mailto:afuelle1@uni-bonn.de",
-                "Adrian Fuelle"
-              )
-            )
-          )
-        ),
-        
-        # ======================================================
-        # Results tab (existing outputs, restyled containers)
-        # ======================================================
-        tabPanel(
-          title = "Results",
-          value = "Results",
-          
-          div(
-            class = "page-shell page-shell--gradient stack stack--lg",
-            
-            div(class = "card",
-                h2(class = "heading heading--lg heading--center",
-                   "Selected Financial Supports"),
-                tableOutput("summary"),
-                uiOutput("financial_support_links")
-            ),
-            
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot1_ui", height = "550px")),
-            # uiOutput("plot1_dl_ui"),
-            # 
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot2_ui", height = "550px")),
-            # uiOutput("plot2_dl_ui"),
-            # 
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot3_ui", height = "550px")),
-            # uiOutput("plot3_dl_ui"),
-            # 
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot4_ui", height = "550px")),
-            # uiOutput("plot4_dl_ui"),
-            # 
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot5_ui", height = "550px")),
-            # uiOutput("plot5_dl_ui"),
-            # 
-            # div(class = "plot-frame scroll-xy fullscreen-toggle",
-            #     plotOutput("plot8_ui", height = "550px")),
-            # uiOutput("plot8_dl_ui"),
-            uiOutput("results_plots_ui")            
-            
-          )
-        )
-      ),
-      br(),br(),
-      
-      div(
-        class = "card",
-        tags$img(
-          src = "Funding_declaration.png",
-          height = "100px",
-          style = "display:block; margin: 18px auto 0; max-width: 100%; height: auto;"
-        ),
-        tags$p(
-          tags$a("Disclaimer", href = "https://agroreforest.eu/reforest-tools-disclaimer/",
-                 target = "_blank"),
-          " | ",
-          tags$a("View Source", href = "https://github.com/hortibonn/Apple_Agroforestry/",
-                 target = "_blank")
-        )
-      )
+              br(), br(),br(), br(),
+              
     )
   )
+  
 )
 
 
@@ -436,18 +370,6 @@ server <- function(input, output, session) {
   
   ## Dynamic funding module ----
   funding <- funding_server("funding")   # returns a list of reactives
-  
-  observeEvent(input$side_accordion, {
-    open_panels <- input$side_accordion
-    
-    # bslib may return a character vector (multi-open) or a single string
-    is_open <- isTRUE("funding_panel" %in% open_panels)
-    
-    if (is_open) {
-      updateTabsetPanel(session, "main_tabs", selected = "Results")
-    }
-  }, ignoreInit = TRUE)
-  
   
   output$`funding-financial-support` <- renderUI({
     funding$financial_support_links
@@ -757,7 +679,7 @@ server <- function(input, output, session) {
     
     funding_names <- 
       c("funding_onetime_percentage_initial_cost_schemes_c", "annual_funding_schemes_c",
-        "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c", "funding_onetime_guard_per_tree_schemes_c",
+        "funding_onetime_percentage_consult_schemes_c","funding_onetime_per_tree_schemes_c",
         "funding_onetime_per_m_treerow_schemes_c", "funding_onetime_per_m_hedgerow_schemes_c","annual_funding_per_m_schemes_c",
         "annual_funding_per_tree_schemes_c", "funding_onetime_schemes_c",
         "onetime_external_percentage_incost_schemes_c","onetime_external_percentage_consult_schemes_c",
@@ -996,74 +918,22 @@ server <- function(input, output, session) {
           width  = unit(1, "npc"),
           halign = 0.5,
           margin = margin(t = 6,b = 20)
-        ),
-        plot.caption  = element_textbox_simple(
-          size   = 16,
-          width  = unit(0.98, "npc"),
-          halign = 0,              # left-aligned
-          margin = margin(t = 6,b = 20),
-          hjust = 0,
-          vjust = 1
-        ),
-        axis.title = element_text(size = 16),
-        axis.text = element_text(size = 14),
-        legend.text     = element_text(size = 14, hjust = 0.5),
-        legend.position = legend,
-        plot.margin = margin(t = 50, r = 10, b = 50, l = 10, unit = "pt")
-        
-      )  }
-  
-  
-  output$results_plots_ui <- renderUI({
-    req(mcSimulation_results())   # <- nothing renders before first run
+      ),
+    plot.caption  = element_textbox_simple(
+      size   = 16,
+      width  = unit(0.98, "npc"),
+      halign = 0,              # left-aligned
+      margin = margin(t = 6,b = 20),
+      hjust = 0,
+      vjust = 1
+    ),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.text     = element_text(size = 14, hjust = 0.5),
+    legend.position = legend,
+    plot.margin = margin(t = 50, r = 10, b = 50, l = 10, unit = "pt")
     
-    tagList(
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot1_ui", height = "550px")),
-        uiOutput("plot1_dl_ui")
-      ),
-      
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot2_ui", height = "550px")),
-        uiOutput("plot2_dl_ui")
-      ),
-      
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot3_ui", height = "550px")),
-        uiOutput("plot3_dl_ui")
-      ),
-      
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot4_ui", height = "550px")),
-        uiOutput("plot4_dl_ui")
-      ),
-      
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot5_ui", height = "550px")),
-        uiOutput("plot5_dl_ui")
-      ),
-      
-      div(
-        class = "card",
-        div(class = "plot-frame scroll-xy fullscreen-toggle",
-            plotOutput("plot8_ui", height = "550px")),
-        uiOutput("plot8_dl_ui")
-      )
-    )
-  })
-  
-  
-  
+    )  }
   
   # download helper
   make_download <- function(id, plot_obj, filename, width = 13, height = 5, dpi = 300, scale = 2) {
