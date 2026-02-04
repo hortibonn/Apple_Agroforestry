@@ -251,7 +251,7 @@ ui <- fluidPage(
             class = "page-shell page-shell--gradient stack stack--lg",
             
             h2(class = "heading heading--lg heading--center",
-               "Apple alley-cropping: Monte Carlo economic assessment"
+               "Should I transition to Apple alley-cropping?"
             ),
             
             div(
